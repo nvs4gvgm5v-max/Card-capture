@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Захват карты банкоматом</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f6f8;color:#1f2937;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}.wrap{width:100%;max-width:860px;background:#fff;border-radius:22px;box-shadow:0 14px 36px rgba(0,0,0,.12);padding:30px}h1{margin:0 0 8px;text-align:center;font-size:28px}.sub{text-align:center;color:#667085;margin-bottom:22px}.progress-text{display:flex;justify-content:space-between;font-weight:700;margin-bottom:8px}.bar{height:10px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-bottom:22px}.fill{height:100%;background:#344054;width:0;transition:.25s}.card{background:#f2f4f7;border-radius:16px;padding:20px;margin-bottom:20px}.label{font-size:13px;text-transform:uppercase;color:#667085;font-weight:700;margin-bottom:8px;letter-spacing:.04em}.client{font-size:20px;line-height:1.45}.answers{display:grid;gap:12px}.btn{border:2px solid #d0d5dd;background:#fff;border-radius:15px;padding:16px 18px;font-size:17px;line-height:1.4;text-align:left;cursor:pointer;transition:.18s}.btn:hover{background:#f9fafb;border-color:#98a2b3}.btn.ok{background:#dcfce7;border-color:#16a34a}.btn.bad{background:#fee2e2;border-color:#dc2626}.btn:disabled{cursor:default}.msg{min-height:28px;margin-top:16px;color:#b42318;font-weight:700}.finish{text-align:center;padding:28px 8px}.finish h2{font-size:30px;margin:0 0 12px}.again{margin-top:18px;background:#344054;color:white;text-align:center;border-color:#344054;max-width:240px}@media(max-width:600px){.wrap{padding:20px;border-radius:18px}h1{font-size:24px}.client{font-size:18px}.btn{font-size:15px;padding:14px}}
+</style>
+</head>
+<body>
+<div class="wrap"><h1>Захват карты банкоматом</h1><div class="sub">Выберите правильный ответ оператора</div><div id="app"></div></div>
+<script>
+const steps=[
+{c:"Здравствуйте, банкомат съел мою карту. Что делать?",a:[["Для того, чтобы ответить на данный вопрос, мне необходимо провести процедуру проверки данных. Уточните, ваши ФИО и дату рождения.",0],["Как я могу к вам обращаться?",1]]},
+{c:"Ирина",a:[["Ирина, буду рада вам помочь. Кодовое слово задавали в нашем банке?",0],["Ирина, буду рада вам помочь. Подскажите, номер банкомата, который захватил карту. Его можно узнать, распечатав чек или посмотрев на экране банкомата в правом нижнем углу.",0],["Ирина, буду рада вам помочь. Подскажите, карта какого банка была захвачена?",1]]},
+{c:"ПСБ",a:[["Подскажите серийный номер банкомата. Его можно узнать, распечатав чек или посмотрев на экране банкомата в правом нижнем углу.",0],["В банкомате какого банка?",1],["В каком офисе произошел захват карты?",0]]},
+{c:"УБРиР",a:[["В каком регионе находитесь сейчас?",1],["Подскажите серийный номер банкомата. Его можно узнать, распечатав чек или посмотрев на экране банкомата в правом нижнем углу.",0],["В таком случае рекомендую перевыпустить карту.",0]]},
+{c:"Ярославль, Ярославская область",a:[["В таком случае рекомендую карту заблокировать. После блокировки карты средствами невозможно будет воспользоваться, так что рекомендую средства перевести с карты, либо в офис после блокировки обратитесь, чтоб средства вывести. Будет возможность в личном кабинете блокировку осуществить?",1],["В таком случае рекомендую обратиться в свой банк и заблокировать карту, а также уточнить причину изъятия. Предположительный срок изъятия из банкомата и доставки карты в уполномоченное подразделение Банка составляет до 10 рабочих дней.",0],["В таком случае рекомендую перевыпустить карту. Предположительный срок изъятия из банкомата и доставки карты в уполномоченное подразделение Банка составляет до 10 рабочих дней.",0]]},
+{c:"Да. Карту когда вернут?",a:[["Необходимо направить карту на перевыпуск, так как сторонние банкоматы не осуществляют возврат карты.",1],["Предположительный срок изъятия из банкомата и доставки карты в уполномоченное подразделение Банка составляет от 10 рабочих дней. Данный срок является ориентировочным и может быть увеличен.",0]]},
+{c:"Понятно",a:[["Спасибо за обращение, хорошего дня.",0],["У вас остались еще ко мне вопросы?",1]]},
+{c:"Нет",a:[["Спасибо за обращение, хорошего дня.",1]]}
+];
+let i=0,lock=false;const app=document.getElementById("app");
+function esc(s){return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+function render(){lock=false;let p=Math.round(i/steps.length*100),s=steps[i];app.innerHTML=`<div class="progress-text"><span>Шаг ${i+1} из ${steps.length}</span><span>${p}%</span></div><div class="bar"><div class="fill" style="width:${p}%"></div></div><div class="card"><div class="label">Клиент</div><div class="client">${esc(s.c)}</div></div><div class="label">Варианты ответа оператора</div><div class="answers">${s.a.map((x,n)=>`<button class="btn" onclick="answer(${n})">${esc(x[0])}</button>`).join("")}</div><div class="msg" id="msg"></div>`}
+function answer(n){if(lock)return;lock=true;let b=document.querySelectorAll(".btn"),ok=steps[i].a[n][1],m=document.getElementById("msg");b.forEach(x=>x.disabled=true);if(ok){b[n].classList.add("ok");setTimeout(()=>{i++;i>=steps.length?finish():render()},650)}else{b[n].classList.add("bad");m.textContent="Ответ неверный. Начинаем сначала.";setTimeout(()=>{i=0;render()},1500)}}
+function finish(){app.innerHTML=`<div class="bar"><div class="fill" style="width:100%"></div></div><div class="finish"><h2>🎉 Поздравляем! Вы успешно прошли тренажер!</h2><button class="btn again" onclick="i=0;render()">Пройти ещё раз</button></div>`}
+render();
+</script>
+</body></html>
