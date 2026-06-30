@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Захват карты банкоматом</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #222;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .trainer {
+      width: 100%;
+      max-width: 850px;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 12px 35px rgba(0,0,0,.12);
+      padding: 32px;
+    }
+    h1 { margin: 0 0 10px; font-size: 28px; text-align: center; }
+    .subtitle { text-align: center; color: #667085; margin-bottom: 24px; font-size: 15px; }
+    .progress { margin-bottom: 18px; font-weight: 700; color: #344054; }
+    .dialog-block {
+      background: #f2f4f7;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+    .label {
+      font-size: 13px;
+      text-transform: uppercase;
+      color: #667085;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .client-text { font-size: 20px; }
+    .answers { display: grid; gap: 12px; }
+    button {
+      width: 100%;
+      border: 2px solid #d0d5dd;
+      background: #fff;
+      border-radius: 14px;
+      padding: 16px 18px;
+      font-size: 17px;
+      line-height: 1.4;
+      text-align: left;
+      cursor: pointer;
+      transition: .2s;
+    }
+    button:hover { border-color: #98a2b3; background: #f9fafb; }
+    button.correct { background: #dcfce7; border-color: #22c55e; }
+    button.wrong { background: #fee2e2; border-color: #ef4444; }
+    button:disabled { cursor: default; }
+    .message {
+      min-height: 28px;
+      margin-top: 18px;
+      font-weight: 700;
+      color: #b42318;
+    }
+    .finish { text-align: center; padding: 30px 10px; }
+    .finish h2 { font-size: 30px; margin-bottom: 14px; }
+    .finish p { color: #667085; font-size: 18px; }
+    .restart { margin-top: 24px; text-align: center; }
+    .restart button {
+      max-width: 260px;
+      text-align: center;
+      background: #344054;
+      color: white;
+      border-color: #344054;
+    }
+  </style>
+</head>
+<body>
+  <div class="trainer">
+    <h1>Захват карты банкоматом</h1>
+    <div class="subtitle">Интерактивный тренажер диалога с клиентом</div>
+    <div id="content"></div>
+  </div>
+
+  <script>
+    const scenario = [
+      {
+        client: "Здравствуйте, банкомат съел мою карту. Что делать?",
+        answers: [
+          { text: "Для того, чтобы ответить на данный вопрос, мне необходимо провести процедуру проверки данных. Уточните, ваши ФИО и дату рождения.", correct: false },
+          { text: "Как я могу к вам обращаться?", correct: true }
+        ]
+      },
+      {
+        client: "Ирина",
+        answers: [
+          { text: "Ирина, буду рада вам помочь. Кодовое слово задавали в нашем банке?", correct: false },
+          { text: "Ирина, буду рада вам помочь. Подскажите, номер банкомата, который захватил карту. Его можно узнать, распечатав чек или посмотрев на экране банкомата в правом нижнем углу.", correct: false },
+          { text: "Ирина, буду рада вам помочь. Подскажите, карта какого банка была захвачена?", correct: true }
+        ]
+      },
+      {
+        client: "ПСБ",
+        answers: [
+          { text: "Подскажите серийный номер банкомата. Его можно узнать, распечатав чек или посмотрев на экране банкомата в правом нижнем углу.", correct: false },
+          { text: "В банкомате какого банка?", correct: true },
+          { text: "В каком офисе произошел захват карты?", correct: false }
+        ]
+      },
+      {
+        client: "УБРиР",
+        answers: [
+          { text: "В каком регионе находитесь сейчас?", correct: true },
+          { text: "Подскажите серийный номер банкомата. Его можно узнать, распечатав чек или посмотрев на экране банкомата в правом нижнем углу.", correct: false },
+          { text: "В таком случае рекомендую перевыпустить карту.", correct: false }
+        ]
+      },
+      {
+        client: "Ярославль, Ярославская область",
+        answers: [
+          { text: "В таком случае рекомендую карту заблокировать. После блокировки карты средствами невозможно будет воспользоваться, так что рекомендую средства перевести с карты, либо в офис после блокировки обратитесь, чтоб средства вывести. Будет возможность в личном кабинете блокировку осуществить?", correct: true },
+          { text: "В таком случае рекомендую обратиться в свой банк и заблокировать карту, а также уточнить причину изъятия. Предположительный срок изъятия из банкомата и доставки карты в уполномоченное подразделение Банка составляет до 10 рабочих дней.", correct: false },
+          { text: "В таком случае рекомендую перевыпустить карту. Предположительный срок изъятия из банкомата и доставки карты в уполномоченное подразделение Банка составляет до 10 рабочих дней.", correct: false }
+        ]
+      },
+      {
+        client: "Да. Карту когда вернут?",
+        answers: [
+          { text: "Необходимо направить карту на перевыпуск, так как сторонние банкоматы не осуществляют возврат карты.", correct: true },
+          { text: "Предположительный срок изъятия из банкомата и доставки карты в уполномоченное подразделение Банка составляет от 10 рабочих дней. Данный срок является ориентировочным и может быть увеличен.", correct: false }
+        ]
+      },
+      {
+        client: "Понятно",
+        answers: [
+          { text: "Спасибо за обращение, хорошего дня.", correct: false },
+          { text: "У вас остались еще ко мне вопросы?", correct: true }
+        ]
+      },
+      {
+        client: "Нет",
+        answers: [
+          { text: "Спасибо за обращение, хорошего дня.", correct: true }
+        ]
+      }
+    ];
+
+    let currentStep = 0;
+    let locked = false;
+    const content = document.getElementById("content");
+
+    function renderStep() {
+      locked = false;
+      const step = scenario[currentStep];
+
+      content.innerHTML = `
+        <div class="progress">Шаг ${currentStep + 1} из ${scenario.length}</div>
+        <div class="dialog-block">
+          <div class="label">Клиент</div>
+          <div class="client-text">${step.client}</div>
+        </div>
+        <div class="label">Выберите ответ оператора</div>
+        <div class="answers">
+          ${step.answers.map((answer, index) => `
+            <button onclick="checkAnswer(${index})">${answer.text}</button>
+          `).join("")}
+        </div>
+        <div class="message" id="message"></div>
+      `;
+    }
+
+    function checkAnswer(index) {
+      if (locked) return;
+      locked = true;
+
+      const step = scenario[currentStep];
+      const selectedAnswer = step.answers[index];
+      const buttons = document.querySelectorAll("button");
+      const message = document.getElementById("message");
+
+      buttons.forEach(button => button.disabled = true);
+
+      if (selectedAnswer.correct) {
+        buttons[index].classList.add("correct");
+
+        setTimeout(() => {
+          currentStep++;
+          if (currentStep >= scenario.length) {
+            renderFinish();
+          } else {
+            renderStep();
+          }
+        }, 800);
+      } else {
+        buttons[index].classList.add("wrong");
+        message.textContent = "Ответ неверный. Начинаем сначала.";
+
+        setTimeout(() => {
+          currentStep = 0;
+          renderStep();
+        }, 1500);
+      }
+    }
+
+    function renderFinish() {
+      content.innerHTML = `
+        <div class="finish">
+          <h2>Поздравляем! Диалог успешно завершен.</h2>
+          <p>Сотрудник прошел тренажер без ошибок.</p>
+          <div class="restart">
+            <button onclick="restartTrainer()">Пройти еще раз</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function restartTrainer() {
+      currentStep = 0;
+      renderStep();
+    }
+
+    renderStep();
+  </script>
+</body>
+</html>
